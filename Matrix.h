@@ -4,13 +4,16 @@
 #include <math.h>
 #include <stdexcept>
 #define EPS 0.00000001
+
+
 namespace linalg {
+	template <typename T>
 	class Matrix {
-	private:
-		double* m_ptr;
+private:
+		T* m_ptr;
 		int m_rows;
 		int m_columns;
-	public:
+public:
 		Matrix() {
 			m_rows = 0;
 			m_columns = 0;
@@ -21,7 +24,7 @@ namespace linalg {
 			if (rows < 0) {
 				throw std::runtime_error("Rows at least zero!");
 			}
-			m_ptr = new double[rows];
+			m_ptr = new T[rows];
 			m_rows = rows;
 			m_columns = 1;
 
@@ -34,7 +37,7 @@ namespace linalg {
 			if (cols < 0) {
 				throw std::runtime_error("Cols at least zero!");
 			}
-			m_ptr = new double[static_cast<long long>(rows) * cols];
+			m_ptr = new T[static_cast<long long>(rows) * cols];
 			m_rows = rows;
 			m_columns = cols;
 		}
@@ -51,19 +54,19 @@ namespace linalg {
 			m_columns = moved.m_columns;
 		}
 
-		Matrix(const std::initializer_list<double>& list) : Matrix(list.size()) {
+		Matrix(const std::initializer_list<T>& list) : Matrix(list.size()) {
 			int i = 0;
 			for (auto el : list) {
 				m_ptr[i++] = el;
 			}
 		}
 
-		Matrix(const std::initializer_list<const std::initializer_list<double>>& list) {
+		Matrix(const std::initializer_list<const std::initializer_list<T>>& list) {
 			m_rows = list.size();
 			m_columns = 1;
 			if (list.begin() != list.end()) {
 				m_columns = (*list.begin()).size();
-				m_ptr = new double[static_cast<long long>(m_rows) * m_columns];
+				m_ptr = new T[static_cast<long long>(m_rows) * m_columns];
 			}
 			else {
 				delete[] m_ptr;
@@ -115,7 +118,7 @@ namespace linalg {
 
 			m_rows = m1.m_rows;
 			m_columns = m1.m_columns;
-			m_ptr = new double[static_cast<long long>(m_rows) * m_columns];
+			m_ptr = new T[static_cast<long long>(m_rows) * m_columns];
 
 			for (int i = 0; i < m_rows * m_columns; i++) {
 				m_ptr[i] = m1.m_ptr[i];
@@ -136,7 +139,7 @@ namespace linalg {
 			return *this;
 		}
 
-		double& operator()(int i, int j) {
+		T& operator()(int i, int j) {
 			if (0 <= i && i < m_rows && 0 <= j && j < m_columns) {
 				return m_ptr[i * m_columns + j];
 			}
@@ -146,7 +149,7 @@ namespace linalg {
 			}
 		}
 
-		const double& operator()(int i, int j) const {
+		const T& operator()(int i, int j) const {
 			if (0 <= i && i < m_rows && 0 <= j && j < m_columns) {
 				return m_ptr[i * m_columns + j];
 			}
@@ -158,29 +161,13 @@ namespace linalg {
 
 		friend std::ostream& operator << (std::ostream& os, const Matrix& m)
 		{
-			double maxd = 0;
-			for (int i = 0; i < m.m_columns * m.m_rows; i++) {
-				if (maxd < m.m_ptr[i]) {
-					maxd = m.m_ptr[i];
-				}
-			}
-			int maxl = 0;
-			int maxi = static_cast<int>(maxd);
-			while (maxi > 0) {
-				maxi /= 10;
-				maxl++;
-			}
 			for (int i = 0; i < m.m_columns * m.m_rows; i++) {
 				if (i % m.m_columns == 0) {
 					os << "|";
 				}
-				if (abs(m.m_ptr[i]) > EPS) {
-					os << std::setw(maxl + 4) << std::setprecision(3) << m.m_ptr[i];
-				}
-				else {
-					os << std::setw(maxl + 4) << std::setprecision(3) << 0;
-
-				}
+				
+				os << std::setw(6) << std::setprecision(3) << m.m_ptr[i];
+				
 				if ((i + 1) % m.m_columns == 0) {
 					os << "|";
 					if (i + 1 < m.m_columns * m.m_rows) {
@@ -257,7 +244,8 @@ namespace linalg {
 			return ans;
 		}
 
-		friend Matrix& operator*(double x, const Matrix& m) {
+		template<typename X>
+		friend Matrix& operator*(X x, const Matrix& m) {
 			Matrix ans(m.m_rows, m.m_columns);
 			for (int i = 0; i < m.m_columns * m.m_rows; i++) {
 				ans.m_ptr[i] = m.m_ptr[i] * x;
@@ -266,7 +254,8 @@ namespace linalg {
 			return ans;
 		}
 
-		friend Matrix& operator*(const Matrix& m, double x) {
+		template<typename X>
+		friend Matrix& operator*(const Matrix& m, X x) {
 			Matrix ans(m.m_rows, m.m_columns);
 			for (int i = 0; i < m.m_columns * m.m_rows; i++) {
 				ans.m_ptr[i] = m.m_ptr[i] * x;
@@ -280,7 +269,8 @@ namespace linalg {
 			return *this;
 		}
 
-		Matrix& operator*=(double x) {
+		template<typename X>
+		Matrix& operator*=(X x) {
 			for (int i = 0; i < m_columns * m_rows; i++) {
 				m_ptr[i] *= x;
 			}
@@ -292,7 +282,7 @@ namespace linalg {
 				throw std::runtime_error("Matrix is not square!");
 			}
 
-			int trace = 0;
+			T trace = 0;
 			for (int i = 0; i < m_rows; i++) {
 				trace += (*this)(i, i);
 			}
@@ -308,7 +298,7 @@ namespace linalg {
 			for (int i = 0; i < m_rows * m_columns; i++) {
 				ans.m_ptr[i] = m_ptr[i];
 			}
-			double det = 1;
+			T det = 1;
 			//(i, i_) - это координаты потенциального опорного элемента
 			for (int i = 0, i_ = 0; i < m_rows && i_ < m_columns; i++, i_++) {
 				int j = i; // j - строка, с максимальнм элементом в столбце i_
@@ -329,14 +319,14 @@ namespace linalg {
 				}
 				//ставим строку с максимальным элементом на место строки i
 				for (int k = 0; k < m_columns; k++) {
-					double swapper = ans(i, k);
+					T swapper = ans(i, k);
 					ans(i, k) = ans(j, k);
 					ans(j, k) = swapper;
 				}
 
 				//вычитаем из всех строк, что ниже строки i, эту строку, домноженый на коэфицент так, чтобы все элементы i_ого столбца cтали равны 0
 				for (int h = i + 1; h < m_rows; h++) {
-					double coef = ans(h, i_) / ans(i, i_);
+					double coef = 1.0 * (ans(h, i_)) / ans(i, i_);
 					for (int k = 0; k < m_columns; k++) {
 						ans(h, k) -= ans(i, k) * coef;
 					}
@@ -368,13 +358,13 @@ namespace linalg {
 				}
 				//ставим строку с максимальным элементом на место строки i
 				for (int k = 0; k < m_columns; k++) {
-					double swapper = ans(i, k);
+					T swapper = ans(i, k);
 					ans(i, k) = ans(j, k);
 					ans(j, k) = swapper;
 				}
 				//вычитаем из всех строк, что ниже строки i, эту строку, домноженый на коэфицент так, чтобы все элементы i_ого столбца cтали равны 0
 				for (int h = i + 1; h < m_rows; h++) {
-					double coef = ans(h, i_) / ans(i, i_);
+					double coef = 1.0 * (ans(h, i_)) / ans(i, i_);
 					for (int k = 0; k < m_columns; k++) {
 						ans(h, k) -= ans(i, k) * coef;
 					}
@@ -443,7 +433,7 @@ namespace linalg {
 				}
 
 				for (int k = 0; k < i; k++) {
-					double coef = ans(k, j_based) / ans(i, j_based);
+					double coef = 1.0 * (ans(k, j_based)) / ans(i, j_based);
 					for (int h = 0; h < m_columns; h++) {
 						ans(k, h) -= coef * ans(i, h);
 					}
@@ -472,101 +462,103 @@ namespace linalg {
 		}
 
 		double norm() const {
-			int sum2 = 0;
+			T sum2 = 0;
 			for (int i = 0; i < static_cast<long long>(m_rows * m_columns); i++) {
 				sum2 += m_ptr[i] * m_ptr[i];
 			}
 			return std::sqrt(sum2);
 		}
 
-		
 	};
 }
 
-	linalg::Matrix concatenate(const linalg::Matrix& m1, const linalg::Matrix& m2) {//cклеивает по горизонтали
-		if (m1.rows() != m2.rows()) {
-			throw std::runtime_error("The matrices have a different number of rows!");
-		}
-
-		linalg::Matrix ans(m1.rows(), m1.columns() + m2.columns());
-
-		for (int i = 0; i < m1.rows(); i++) {
-			for (int j = 0; j < m1.columns(); j++) {
-				ans(i, j) = m1(i, j);
-			}
-			for (int j = 0; j < m2.columns(); j++) {
-				ans(i, m1.columns() + j) = m2(i, j);
-			}
-		}
-		return ans;
+template<typename T>
+linalg::Matrix<T> concatenate(const linalg::Matrix<T>& m1, const linalg::Matrix<T>& m2) {//cклеивает по горизонтали
+	if (m1.rows() != m2.rows()) {
+		throw std::runtime_error("The matrices have a different number of rows!");
 	}
 
-	linalg::Matrix transpose(const linalg::Matrix& m) {
-		linalg::Matrix ans(m.columns(), m.rows());
+	linalg::Matrix<T> ans(m1.rows(), m1.columns() + m2.columns());
 
-		for (int i = 0; i < ans.rows(); i++) {
-			for (int j = 0; j < ans.columns(); j++) {
-				ans(i, j) = m(j, i);
-			}
+	for (int i = 0; i < m1.rows(); i++) {
+		for (int j = 0; j < m1.columns(); j++) {
+			ans(i, j) = m1(i, j);
 		}
+		for (int j = 0; j < m2.columns(); j++) {
+			ans(i, m1.columns() + j) = m2(i, j);
+		}
+	}
+	return ans;
+}
 
-		return ans;
+template<typename T>
+linalg::Matrix<T> transpose(const linalg::Matrix<T>& m) {
+	linalg::Matrix<T> ans(m.columns(), m.rows());
+
+	for (int i = 0; i < ans.rows(); i++) {
+		for (int j = 0; j < ans.columns(); j++) {
+			ans(i, j) = m(j, i);
+		}
 	}
 
-	double minor(const linalg::Matrix& m, int i_, int j_) {
-		if (m.rows() != m.columns()) {
-			throw std::runtime_error("Matrix is not square!");
-		}
-		if (m.rows() < 1 || m.columns() < 1) {
-			throw std::runtime_error("Matrix is 1x1 or less!");
-		}
-		if (m.rows() == 1 || m.columns() == 1) {
-			return 1;
-		}
+	return ans;
+}
 
-		i_--;
-		j_--;
+template<typename T>
+T minor(const linalg::Matrix<T>& m, int i_, int j_) {
+	if (m.rows() != m.columns()) {
+		throw std::runtime_error("Matrix is not square!");
+	}
+	if (m.rows() < 1 || m.columns() < 1) {
+		throw std::runtime_error("Matrix is 1x1 or less!");
+	}
+	if (m.rows() == 1 || m.columns() == 1) {
+		return 1;
+	}
 
-		linalg::Matrix minor(m.rows() - 1, m.columns() - 1);
-		int counted = 0;
-		for (int i = 0; i < m.rows(); i++) {
-			if (i == i_) {
+	i_--;
+	j_--;
+
+	linalg::Matrix<T> minor(m.rows() - 1, m.columns() - 1);
+	int counted = 0;
+	for (int i = 0; i < m.rows(); i++) {
+		if (i == i_) {
+			continue;
+		}
+		for (int j = 0; j < m.columns(); j++) {
+			if (j == j_) {
 				continue;
 			}
-			for (int j = 0; j < m.columns(); j++) {
-				if (j == j_) {
-					continue;
-				}
-				minor(static_cast<int>(counted/minor.columns()), static_cast<int>(counted % minor.columns())) = m(i, j);
-				counted++;
-			}
+			minor(static_cast<int>(counted / minor.columns()), static_cast<int>(counted % minor.columns())) = m(i, j);
+			counted++;
 		}
-		return minor.det();
+	}
+	return minor.det();
+}
+
+template<typename T>
+T cofactor(const linalg::Matrix<T>& m, int i_, int j_) {
+	return std::pow(-1, i_ + j_) * minor(m, i_, j_);
+}
+
+template<typename T>
+linalg::Matrix<T> invert(const linalg::Matrix<T>& m) {
+	if (m.rows() != m.columns()) {
+		throw std::runtime_error("Matrix is not square!");
 	}
 
-	double cofactor(const linalg::Matrix& m, int i_, int j_) {
-		return std::pow(-1, i_ + j_) * minor(m, i_, j_);
+	if (abs(m.det()) < EPS) {
+		throw std::runtime_error("Determinante is zero!");
 	}
 
-	linalg::Matrix invert(const linalg::Matrix& m) {
-		if (m.rows() != m.columns()) {
-			throw std::runtime_error("Matrix is not square!");
-		}
+	linalg::Matrix<T> cofactors(m.rows(), m.columns());
 
-		if (abs(m.det()) < EPS) {
-			throw std::runtime_error("Determinante is zero!");
+	for (int i = 0; i < m.rows(); i++) {
+		for (int j = 0; j < m.columns(); j++) {
+			cofactors(i, j) = cofactor(m, i + 1, j + 1);
 		}
-
-		linalg::Matrix cofactors(m.rows(), m.columns());
-
-		for (int i = 0; i < m.rows(); i++) {
-			for (int j = 0; j < m.columns(); j++) {
-				cofactors(i, j) = cofactor(m, i+1, j+1);
-			}
-		}
-		
-		cofactors = transpose(cofactors) * (1/m.det());
-		return cofactors;
 	}
-	//wfefwefwfw
-	int sum();
+
+	cofactors = transpose(cofactors) * (1 / m.det());
+	return cofactors;
+}
